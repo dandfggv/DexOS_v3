@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>DexOS v3 – Glass Desktop</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- React + Babel CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      :root {
+        --glass-bg: rgba(255, 255, 255, 0.12);
+        --glass-border: rgba(255, 255, 255, 0.35);
+        --accent: #4da6ff;
+        --accent-soft: rgba(77, 166, 255, 0.5);
+        --bg-gradient-light: radial-gradient(circle at top, #3a4f80, #0a101c);
+        --bg-gradient-dark: radial-gradient(circle at top, #131826, #020309);
+      }
+
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", sans-serif;
+        background: black;
+        color: white;
+        overflow: hidden;
+      }
+
+      #root {
+        height: 100vh;
+        width: 100vw;
+      }
+
+      /* BOOT SCREEN */
+
+      .boot-screen {
+        height: 100vh;
+        width: 100vw;
+        background: black;
+        color: #0f0;
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        font-family: "SF Mono", "Courier New", monospace;
+        white-space: pre-wrap;
+        font-size: 14px;
+      }
+
+      .boot-logo {
+        text-align: center;
+        margin-top: auto;
+        margin-bottom: auto;
+        font-size: 32px;
+        color: #fff;
+      }
+
+      /* LOGIN / ONBOARD */
+
+      .login-screen {
+        height: 100vh;
+        width: 100vw;
+        background: var(--bg-gradient-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .login-card {
+        background: rgba(0, 0, 0, 0.45);
+        border-radius: 24px;
+        padding: 32px 40px;
+        backdrop-filter: blur(22px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        text-align: center;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.85);
+        min-width: 280px;
+      }
+
+      .login-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        margin: 0 auto 16px;
+        background: radial-gradient(circle at 30% 0, #fff, #4da6ff);
+        box-shadow: 0 0 20px var(--accent-soft);
+      }
+
+      .login-title {
+        font-size: 22px;
+        margin-bottom: 4px;
+      }
+
+      .login-sub {
+        font-size: 13px;
+        opacity: 0.8;
+        margin-bottom: 16px;
+      }
+
+      .login-input {
+        margin-top: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.32);
+        background: rgba(0, 0, 0, 0.35);
+        color: white;
+        width: 220px;
+        outline: none;
+        font-size: 14px;
+      }
+
+      .login-button {
+        margin-top: 16px;
+        padding: 8px 20px;
+        border-radius: 999px;
+        border: none;
+        background: linear-gradient(135deg, #4da6ff, #8a7bff);
+        color: white;
+        cursor: pointer;
+        font-weight: 500;
+        box-shadow: 0 0 14px var(--accent-soft);
+        font-size: 14px;
+      }
+
+      .login-button:hover {
+        filter: brightness(1.08);
+      }
+
+      .login-error {
+        margin-top: 8px;
+        color: #ff8080;
+        font-size: 12px;
+      }
+
+      /* DESKTOP */
+
+      .desktop {
+        height: 100vh;
+        width: 100vw;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .desktop.light {
+        background: var(--bg-gradient-light);
+      }
+
+      .desktop.dark {
+        background: var(--bg-gradient-dark);
+      }
+
+      .desktop-wallpaper {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 10% 20%, #4da6ff44, transparent),
+          radial-gradient(circle at 80% 80%, #ff4df044, transparent),
+          radial-gradient(circle at 50% 0%, #ffffff22, transparent);
+        pointer-events: none;
+      }
+
+      .desktop.dark .desktop-wallpaper {
+        background: radial-gradient(circle at 10% 20%, #3454ff33, transparent),
+          radial-gradient(circle at 80% 80%, #ff336633, transparent),
+          radial-gradient(circle at 20% 90%, #00ffd533, transparent);
+      }
+
+      .desktop-icons {
+        position: absolute;
+        top: 18px;
+        left: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        z-index: 1;
+      }
+
+      .icon {
+        width: 80px;
+        text-align: center;
+        color: white;
+        cursor: pointer;
+        user-select: none;
+        font-size: 12px;
+      }
+
+      .icon-emoji {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 4px;
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 30px;
+        background: rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        backdrop-filter: blur(16px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .icon:hover .icon-emoji {
+        transform: translateY(-3px) scale(1.03);
+        box-shadow: 0 16px 32px rgba(0, 0, 0, 0.9);
+      }
+
+      /* DOCK */
+
+      .dock {
+        position: absolute;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 8px 18px;
+        border-radius: 999px;
+        background: rgba(15, 15, 22, 0.82);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        backdrop-filter: blur(20px);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: white;
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.85);
+        z-index: 3;
+      }
+
+      .dock-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        cursor: pointer;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.9);
+        transition: transform 0.15s ease, box-shadow 0.15s ease,
+          background 0.15s ease;
+      }
+
+      .dock-icon:hover {
+        transform: translateY(-5px) scale(1.06);
+        box-shadow: 0 16px 32px rgba(0, 0, 0, 0.95);
+        background: rgba(255, 255, 255, 0.16);
+      }
+
+      .dock-separator {
+        width: 1px;
+        height: 32px;
+        background: rgba(255, 255, 255, 0.22);
+        margin: 0 6px;
+      }
+
+      .taskbar-right {
+        margin-left: 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        opacity: 0.9;
+      }
+
+      .taskbar-user {
+        font-size: 12px;
+        opacity: 0.85;
+      }
+
+      /* WINDOWS */
+
+      .window {
+        position: absolute;
+        min-width: 320px;
+        max-width: 80vw;
+        min-height: 220px;
+        max-height: 80vh;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.23),
+          rgba(255, 255, 255, 0.08)
+        );
+        border-radius: 18px;
+        border: 1px solid var(--glass-border);
+        backdrop-filter: blur(22px);
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.8);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        z-index: 2;
+        animation: windowIn 0.2s ease-out;
+      }
+
+      @keyframes windowIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px) scale(0.97);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .window-header {
+        height: 32px;
+        padding: 0 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: move;
+        background: linear-gradient(
+          to right,
+          rgba(10, 10, 14, 0.78),
+          rgba(10, 10, 18, 0.55)
+        );
+        color: #f5f5f5;
+        font-size: 13px;
+      }
+
+      .window-dots {
+        display: flex;
+        gap: 6px;
+      }
+
+      .window-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+
+      .dot-close {
+        background: #ff5f57;
+      }
+
+      .dot-minimize {
+        background: #febc2e;
+      }
+
+      .dot-maximize {
+        background: #28c840;
+      }
+
+      .window-title {
+        margin-left: 4px;
+      }
+
+      .window-body {
+        padding: 10px;
+        font-size: 14px;
+        color: #111;
+        background: linear-gradient(
+          145deg,
+          rgba(245, 245, 245, 0.7),
+          rgba(232, 232, 245, 0.4)
+        );
+        overflow: auto;
+        flex: 1;
+      }
+
+      /* BROWSER */
+
+      .browser-controls {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 6px;
+      }
+
+      .browser-url {
+        flex: 1;
+        padding: 5px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        font-size: 13px;
+      }
+
+      .browser-button {
+        padding: 5px 10px;
+        border-radius: 999px;
+        border: none;
+        background: var(--accent);
+        color: white;
+        cursor: pointer;
+        font-size: 13px;
+      }
+
+      .browser-frame {
+        width: 100%;
+        height: 260px;
+        border-radius: 12px;
+        border: 1px solid rgba(0, 0, 0, 0.18);
+        background: white;
+      }
+
+      /* TERMINAL */
+
+      .terminal {
+        background: #05060a;
+        color: #0f0;
+        font-family: "SF Mono", "Courier New", monospace;
+        font-size: 13px;
+        border-radius: 12px;
+        padding: 8px;
+        height: 260px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+      }
+
+      .terminal-input {
+        width: 100%;
+        background: transparent;
+        border: none;
+        color: #0f0;
+        font: inherit;
+        outline: none;
+      }
+
+      /* SNAKE */
+
+      .snake-canvas {
+        background: #000;
+        border-radius: 12px;
+        border: 1px solid rgba(0, 0, 0, 0.4);
+        display: block;
+        margin: 0 auto 8px;
+      }
+
+      /* SETTINGS */
+
+      .settings-section {
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+      }
+
+      .settings-label {
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      .settings-input {
+        padding: 6px 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(0, 0, 0, 0.18);
+        width: 100%;
+      }
+
+      .settings-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .settings-button {
+        padding: 6px 12px;
+        border-radius: 999px;
+        border: none;
+        background: var(--accent);
+        color: white;
+        cursor: pointer;
+        font-size: 13px;
+      }
+
+      .settings-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.06);
+        font-size: 12px;
+      }
+
+      /* SHUTDOWN */
+
+      .shutdown-screen {
+        height: 100vh;
+        width: 100vw;
+        background: radial-gradient(circle at top, #200000, #000000);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #ff6b6b;
+        text-align: center;
+      }
+
+      .shutdown-sub {
+        color: #ff9b9b;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect, useRef } = React;
+
+      // Simple draggable window hook
+      function useDraggable(initialPos) {
+        const [position, setPosition] = useState(initialPos);
+        const dragging = useRef(false);
+        const offset = useRef({ x: 0, y: 0 });
+
+        const onMouseDown = (e) => {
+          dragging.current = true;
+          offset.current = {
+            x: e.clientX - position.x,
+            y: e.clientY - position.y,
+          };
+        };
+
+        const onMouseMove = (e) => {
+          if (!dragging.current) return;
+          setPosition({
+            x: e.clientX - offset.current.x,
+            y: e.clientY - offset.current.y,
+          });
+        };
+
+        const onMouseUp = () => {
+          dragging.current = false;
+        };
+
+        useEffect(() => {
+          window.addEventListener("mousemove", onMouseMove);
+          window.addEventListener("mouseup", onMouseUp);
+          return () => {
+            window.removeEventListener("mousemove", onMouseMove);
+            window.removeEventListener("mouseup", onMouseUp);
+          };
+        });
+
+        return { position, onMouseDown };
+      }
+
+      // Window wrapper
+      function DexWindow({ title, children, initialPos, onClose }) {
+        const { position, onMouseDown } = useDraggable(initialPos);
+
+        return (
+          <div
+            className="window"
+            style={{ left: position.x, top: position.y }}
+          >
+            <div className="window-header" onMouseDown={onMouseDown}>
+              <div className="window-dots">
+                <div className="window-dot dot-close" onClick={onClose}></div>
+                <div className="window-dot dot-minimize"></div>
+                <div className="window-dot dot-maximize"></div>
+              </div>
+              <div className="window-title">{title}</div>
+            </div>
+            <div className="window-body">{children}</div>
+          </div>
+        );
+      }
+
+      // Boot Screen
+      function BootScreen({ onDone }) {
+        const [log, setLog] = useState("");
+        const lines = [
+          "DexOS BIOS v3.0",
+          "Initializing glass compositor...",
+          "Loading user profile...",
+          "Probing memory... OK",
+          "Enumerating devices... OK",
+          "Boot device: GITHUB-PAGES",
+          "Starting DexOS kernel...",
+          "Launching graphical shell...",
+        ];
+
+        useEffect(() => {
+          let i = 0;
+          function typeLine() {
+            if (i >= lines.length) {
+              setTimeout(onDone, 800);
+              return;
+            }
+            setLog((prev) => prev + lines[i] + "\n");
+            i++;
+            setTimeout(typeLine, 320);
+          }
+          typeLine();
+        }, []);
+
+        return (
+          <div className="boot-screen">
+            <div>{log}</div>
+            <div className="boot-logo">DexOS</div>
+          </div>
+        );
+      }
+
+      // Onboarding (first time: set password)
+      function OnboardScreen({ onFinish }) {
+        const [password, setPassword] = useState("");
+        const [confirm, setConfirm] = useState("");
+        const [username, setUsername] = useState("DexOS User");
+        const [error, setError] = useState("");
+
+        const handleSet = () => {
+          if (!password || !confirm) {
+            setError("Please enter and confirm a password.");
+            return;
+          }
+          if (password !== confirm) {
+            setError("Passwords do not match.");
+            return;
+          }
+          // Save to localStorage
+          localStorage.setItem("dexos_password", password);
+          localStorage.setItem("dexos_username", username || "DexOS User");
+          localStorage.setItem("dexos_theme", "light");
+          onFinish();
+        };
+
+        return (
+          <div className="login-screen">
+            <div className="login-card">
+              <div className="login-avatar"></div>
+              <div className="login-title">Welcome to DexOS</div>
+              <div className="login-sub">
+                Set up your account. Password will be saved on this device.
+              </div>
+              <input
+                className="login-input"
+                placeholder="Display name"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+              <br />
+              <input
+                type="password"
+                className="login-input"
+                placeholder="Create password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <br />
+              <input
+                type="password"
+                className="login-input"
+                placeholder="Confirm password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+              />
+              <br />
+              <button className="login-button" onClick={handleSet}>
+                Continue to DexOS
+              </button>
+              {error && <div className="login-error">{error}</div>}
+            </div>
+          </div>
+        );
+      }
+
+      // Login Screen (subsequent visits)
+      function LoginScreen({ onLogin, username }) {
+        const [password, setPassword] = useState("");
+        const [error, setError] = useState("");
+
+        const handleLogin = () => {
+          const stored = localStorage.getItem("dexos_password");
+          if (password === stored) {
+            setError("");
+            onLogin();
+          } else {
+            setError("Incorrect password.");
+          }
+        };
+
+        return (
+          <div className="login-screen">
+            <div className="login-card">
+              <div className="login-avatar"></div>
+              <div className="login-title">{username || "DexOS User"}</div>
+              <div className="login-sub">Enter password to unlock DexOS.</div>
+              <input
+                type="password"
+                className="login-input"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+              />
+              <br />
+              <button className="login-button" onClick={handleLogin}>
+                Log In
+              </button>
+              {error && <div className="login-error">{error}</div>}
+            </div>
+          </div>
+        );
+      }
+
+      // Browser App
+      function BrowserApp() {
+        const [url, setUrl] = useState("https://example.com");
+        const [current, setCurrent] = useState("https://example.com");
+
+        const go = () => {
+          let u = url.trim();
+          if (!u) return;
+          if (!u.startsWith("http://") && !u.startsWith("https://")) {
+            u = "https://" + u;
+          }
+          setCurrent(u);
+        };
+
+        return (
+          <>
+            <div className="browser-controls">
+              <input
+                className="browser-url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && go()}
+                placeholder="Enter URL"
+              />
+              <button className="browser-button" onClick={go}>
+                Go
+              </button>
+            </div>
+            <iframe className="browser-frame" src={current} title="DexOS Browser" />
+          </>
+        );
+      }
+
+      // Terminal App
+      function TerminalApp() {
+        const [lines, setLines] = useState([
+          "DexOS Shell v1.0",
+          "Type 'help' for commands.",
+        ]);
+        const [input, setInput] = useState("");
+        const termRef = useRef(null);
+
+        useEffect(() => {
+          if (termRef.current) {
+            termRef.current.scrollTop = termRef.current.scrollHeight;
+          }
+        }, [lines]);
+
+        const handleCommand = (cmd) => {
+          const parts = cmd.trim().split(" ");
+          const base = parts[0];
+          if (!base) return [];
+
+          switch (base) {
+            case "help":
+              return [
+                "Available commands:",
+                "  help  - show this help",
+                "  clear - clear screen",
+                "  about - about DexOS",
+                "  echo  - echo text",
+                "  reboot - fake reboot",
+              ];
+            case "clear":
+              setLines([]);
+              return [];
+            case "about":
+              return ["DexOS v3 – Glass Desktop", "Running fully in your browser."];
+            case "echo":
+              return [parts.slice(1).join(" ")];
+            case "reboot":
+              return ["Reboot command not available from here."];
+            default:
+              return [`Command not found: ${base}`];
+          }
+        };
+
+        const onSubmit = (e) => {
+          e.preventDefault();
+          const cmd = input;
+          if (!cmd.trim()) return;
+          setInput("");
+          setLines((prev) => [...prev, `dexos> ${cmd}`]);
+          const out = handleCommand(cmd);
+          if (out.length) {
+            setLines((prev) => [...prev, ...out]);
+          }
+        };
+
+        return (
+          <div className="terminal" ref={termRef}>
+            {lines.map((l, i) => (
+              <div key={i}>{l}</div>
+            ))}
+            <form onSubmit={onSubmit}>
+              <span>dexos&gt; </span>
+              <input
+                className="terminal-input"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                autoFocus
+              />
+            </form>
+          </div>
+        );
+      }
+
+      // Snake App
+      function SnakeApp() {
+        const canvasRef = useRef(null);
+
+        useEffect(() => {
+          const canvas = canvasRef.current;
+          const ctx = canvas.getContext("2d");
+          const gridSize = 15;
+          let snake = [{ x: 10, y: 10 }];
+          let dir = { x: 1, y: 0 };
+          let food = { x: 5, y: 5 };
+          let interval = null;
+
+          function placeFood() {
+            food = {
+              x: Math.floor(Math.random() * (canvas.width / gridSize)),
+              y: Math.floor(Math.random() * (canvas.height / gridSize)),
+            };
+          }
+
+          function draw() {
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "lime";
+            snake.forEach((seg) => {
+              ctx.fillRect(
+                seg.x * gridSize,
+                seg.y * gridSize,
+                gridSize - 1,
+                gridSize - 1
+              );
+            });
+
+            ctx.fillStyle = "red";
+            ctx.fillRect(
+              food.x * gridSize,
+              food.y * gridSize,
+              gridSize - 1,
+              gridSize - 1
+            );
+          }
+
+          function step() {
+            const head = {
+              x: snake[0].x + dir.x,
+              y: snake[0].y + dir.y,
+            };
+
+            const maxX = canvas.width / gridSize;
+            const maxY = canvas.height / gridSize;
+            if (head.x < 0) head.x = maxX - 1;
+            if (head.x >= maxX) head.x = 0;
+            if (head.y < 0) head.y = maxY - 1;
+            if (head.y >= maxY) head.y = 0;
+
+            if (snake.some((seg) => seg.x === head.x && seg.y === head.y)) {
+              snake = [{ x: 10, y: 10 }];
+              dir = { x: 1, y: 0 };
+              placeFood();
+            }
+
+            snake.unshift(head);
+
+            if (head.x === food.x && head.y === food.y) {
+              placeFood();
+            } else {
+              snake.pop();
+            }
+
+            draw();
+          }
+
+          function start() {
+            if (interval) clearInterval(interval);
+            interval = setInterval(step, 120);
+          }
+
+          start();
+
+          const handleKey = (e) => {
+            switch (e.key) {
+              case "ArrowUp":
+                if (dir.y === 1) break;
+                dir = { x: 0, y: -1 };
+                break;
+              case "ArrowDown":
+                if (dir.y === -1) break;
+                dir = { x: 0, y: 1 };
+                break;
+              case "ArrowLeft":
+                if (dir.x === 1) break;
+                dir = { x: -1, y: 0 };
+                break;
+              case "ArrowRight":
+                if (dir.x === -1) break;
+                dir = { x: 1, y: 0 };
+                break;
+            }
+          };
+
+          window.addEventListener("keydown", handleKey);
+          return () => {
+            window.removeEventListener("keydown", handleKey);
+            if (interval) clearInterval(interval);
+          };
+        }, []);
+
+        return (
+          <>
+            <canvas
+              ref={canvasRef}
+              className="snake-canvas"
+              width={300}
+              height={300}
+            ></canvas>
+            <p>Use arrow keys to move the snake.</p>
+          </>
+        );
+      }
+
+      // Settings App
+      function SettingsApp({ username, theme, onChange }) {
+        const [name, setName] = useState(username || "DexOS User");
+        const [selectedTheme, setSelectedTheme] = useState(theme || "light");
+
+        const saveSettings = () => {
+          const newSettings = {
+            username: name.trim() || "DexOS User",
+            theme: selectedTheme,
+          };
+          localStorage.setItem("dexos_username", newSettings.username);
+          localStorage.setItem("dexos_theme", newSettings.theme);
+          onChange(newSettings);
+        };
+
+        return (
+          <div>
+            <div className="settings-section">
+              <div className="settings-label">Profile</div>
+              <div className="settings-row">
+                <input
+                  className="settings-input"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Display name"
+                />
+              </div>
+            </div>
+
+            <div className="settings-section">
+              <div className="settings-label">Theme</div>
+              <div className="settings-row">
+                <label className="settings-chip">
+                  <input
+                    type="radio"
+                    name="theme"
+                    value="light"
+                    checked={selectedTheme === "light"}
+                    onChange={() => setSelectedTheme("light")}
+                  />
+                  <span>Light</span>
+                </label>
+                <label className="settings-chip">
+                  <input
+                    type="radio"
+                    name="theme"
+                    value="dark"
+                    checked={selectedTheme === "dark"}
+                    onChange={() => setSelectedTheme("dark")}
+                  />
+                  <span>Dark</span>
+                </label>
+              </div>
+            </div>
+
+            <button className="settings-button" onClick={saveSettings}>
+              Save settings
+            </button>
+          </div>
+        );
+      }
+
+      // Shutdown Screen
+      function ShutdownScreen() {
+        return (
+          <div className="shutdown-screen">
+            <h1>DexOS is shutting down...</h1>
+            <div className="shutdown-sub">
+              Please restart your device manually to continue.
+            </div>
+          </div>
+        );
+      }
+
+      // Desktop
+      function Desktop({ onShutdown, username, theme, onSettingsChange }) {
+        const [showBrowser, setShowBrowser] = useState(false);
+        const [showTerminal, setShowTerminal] = useState(false);
+        const [showSnake, setShowSnake] = useState(false);
+        const [showSettings, setShowSettings] = useState(false);
+        const [time, setTime] = useState(new Date());
+
+        useEffect(() => {
+          const id = setInterval(() => setTime(new Date()), 1000);
+          return () => clearInterval(id);
+        }, []);
+
+        const desktopClass = "desktop " + (theme === "dark" ? "dark" : "light");
+
+        return (
+          <div className={desktopClass}>
+            <div className="desktop-wallpaper" />
+
+            {/* Desktop icons */}
+            <div className="desktop-icons">
+              <div className="icon" onClick={() => setShowBrowser(true)}>
+                <div className="icon-emoji">🌐</div>
+                <span>Browser</span>
+              </div>
+              <div className="icon" onClick={() => setShowTerminal(true)}>
+                <div className="icon-emoji">>_</div>
+                <span>Terminal</span>
+              </div>
+              <div className="icon" onClick={() => setShowSnake(true)}>
+                <div className="icon-emoji">🐍</div>
+                <span>Snake</span>
+              </div>
+              <div className="icon" onClick={() => setShowSettings(true)}>
+                <div className="icon-emoji">⚙️</div>
+                <span>Settings</span>
+              </div>
+              <div className="icon" onClick={onShutdown}>
+                <div className="icon-emoji">⏻</div>
+                <span>Shutdown</span>
+              </div>
+            </div>
+
+            {/* Dock */}
+            <div className="dock">
+              <div className="dock-icon" onClick={() => setShowBrowser(true)}>
+                🌐
+              </div>
+              <div className="dock-icon" onClick={() => setShowTerminal(true)}>
+                ›_
+              </div>
+              <div className="dock-icon" onClick={() => setShowSnake(true)}>
+                🐍
+              </div>
+              <div className="dock-icon" onClick={() => setShowSettings(true)}>
+                ⚙️
+              </div>
+              <div className="dock-separator"></div>
+              <div className="dock-icon" onClick={onShutdown}>
+                ⏻
+              </div>
+              <div className="taskbar-right">
+                <span>
+                  {time.toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </span>
+                <span>{time.toLocaleTimeString()}</span>
+                <span className="taskbar-user">{username}</span>
+              </div>
+            </div>
+
+            {showBrowser && (
+              <DexWindow
+                title="DexOS Browser"
+                initialPos={{ x: 160, y: 80 }}
+                onClose={() => setShowBrowser(false)}
+              >
+                <BrowserApp />
+              </DexWindow>
+            )}
+
+            {showTerminal && (
+              <DexWindow
+                title="DexOS Terminal"
+                initialPos={{ x: 220, y: 130 }}
+                onClose={() => setShowTerminal(false)}
+              >
+                <TerminalApp />
+              </DexWindow>
+            )}
+
+            {showSnake && (
+              <DexWindow
+                title="DexOS Snake"
+                initialPos={{ x: 260, y: 100 }}
+                onClose={() => setShowSnake(false)}
+              >
+                <SnakeApp />
+              </DexWindow>
+            )}
+
+            {showSettings && (
+              <DexWindow
+                title="DexOS Settings"
+                initialPos={{ x: 200, y: 140 }}
+                onClose={() => setShowSettings(false)}
+              >
+                <SettingsApp
+                  username={username}
+                  theme={theme}
+                  onChange={onSettingsChange}
+                />
+              </DexWindow>
+            )}
+          </div>
+        );
+      }
+
+      // Root App
+      function App() {
+        const [phase, setPhase] = useState("boot"); // boot, onboard, login, desktop, shutdown
+        const [username, setUsername] = useState("DexOS User");
+        const [theme, setTheme] = useState("light");
+
+        useEffect(() => {
+          const storedUser = localStorage.getItem("dexos_username");
+          const storedTheme = localStorage.getItem("dexos_theme");
+          if (storedUser) setUsername(storedUser);
+          if (storedTheme) setTheme(storedTheme);
+        }, []);
+
+        const afterBoot = () => {
+          const storedPass = localStorage.getItem("dexos_password");
+          if (storedPass) {
+            setPhase("login");
+          } else {
+            setPhase("onboard");
+          }
+        };
+
+        const handleSettingsChange = ({ username: newName, theme: newTheme }) => {
+          setUsername(newName);
+          setTheme(newTheme);
+        };
+
+        if (phase === "boot") {
+          return <BootScreen onDone={afterBoot} />;
+        }
+        if (phase === "onboard") {
+          return (
+            <OnboardScreen
+              onFinish={() => {
+                const storedUser = localStorage.getItem("dexos_username");
+                const storedTheme = localStorage.getItem("dexos_theme");
+                if (storedUser) setUsername(storedUser);
+                if (storedTheme) setTheme(storedTheme);
+                setPhase("desktop");
+              }}
+            />
+          );
+        }
+        if (phase === "login") {
+          return (
+            <LoginScreen
+              username={username}
+              onLogin={() => setPhase("desktop")}
+            />
+          );
+        }
+        if (phase === "shutdown") {
+          return <ShutdownScreen />;
+        }
+        if (phase === "desktop") {
+          return (
+            <Desktop
+              username={username}
+              theme={theme}
+              onShutdown={() => setPhase("shutdown")}
+              onSettingsChange={handleSettingsChange}
+            />
+          );
+        }
+        return null;
+      }
+
+      const root = ReactDOM.createRoot(document.getElementById("root"));
+      root.render(<App />);
+    </script>
+  </body>
+</html>
